@@ -5,6 +5,7 @@
 class Field{
 	public:	
 		std::vector<std::vector<sf::RectangleShape>> Cells;
+		std::vector<std::vector<int>> Class_cells;
 
 		Field(float Count_Cell, float Size_Window){
 			count_of_cell = Count_Cell;
@@ -53,6 +54,14 @@ int main (){
 
 	  while (window.isOpen())
     {
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed || event.key.code == sf::Keyboard::Escape){
+				window.close();
+			}
+		}
+
 		window.clear(sf::Color::White);
 		window.setView(view);
 		Field field(10, 500);
