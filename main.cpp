@@ -1,6 +1,33 @@
 #include "main.hpp"
 
 
+class tags{
+	private: 
+		struct Tag{
+			sf::RectangleShape Shape;
+			std::pair <float, float> possition;
+			int class_tag;
+		};
+		std::vector<Tag> Tags;
+	public:
+		tags(std::pair<float, float> pos, int class_of_tag ){
+			sf::RectangleShape rect;
+			rect.setFillColor(sf::Color::White);
+			rect.setPosition ({pos.first, pos.second});
+			Tag t;
+			t.Shape = rect;
+			t.class_tag = class_of_tag;
+			t.possition = pos;
+			Tags.push_back(t);
+		};
+
+		void Draw_Tags(sf::RenderWindow window){
+			for (auto t : Tags){
+				window.draw(t.Shape);
+			}
+		};
+
+};
 
 class Field{
 	public:	
@@ -52,7 +79,7 @@ int main (){
     window.setView(view);
     window.setVerticalSyncEnabled(true); 
 
-	  while (window.isOpen())
+	while (window.isOpen())
     {
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -64,7 +91,7 @@ int main (){
 
 		window.clear(sf::Color::White);
 		window.setView(view);
-		Field field(10, 500);
+		Field field(5, 500);
 		field.Draw_field(window);
 		window.display();
          
