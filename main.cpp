@@ -1,6 +1,7 @@
 #include "main.hpp"
 
 
+
 class tags{
 	private: 
 		struct Tag{
@@ -10,9 +11,13 @@ class tags{
 		};
 		std::vector<Tag> Tags;
 	public:
-		tags(std::pair<float, float> pos, int class_of_tag ){
+		int get_sizeTags(){
+			return Tags.size();
+		};
+
+		void add_tag(std::pair<float, float> pos, int class_of_tag){
 			sf::RectangleShape rect;
-			rect.setFillColor(sf::Color::White);
+			rect.setFillColor(sf::Color::Red);
 			rect.setPosition ({pos.first, pos.second});
 			Tag t;
 			t.Shape = rect;
@@ -21,8 +26,18 @@ class tags{
 			Tags.push_back(t);
 		};
 
-		void Draw_Tags(sf::RenderWindow window){
+		tags(){
+
+		};
+
+		void Draw_Tags(sf::RenderWindow& window){
 			for (auto t : Tags){
+				sf::Text text;
+				text.setPosition({t.possition.first, t.possition.second});
+				text.setColor(sf::Color::Black);
+				text.setCharacterSize(5.0f);
+				text.setString (std::to_string(t.class_tag));
+				window.draw(text);
 				window.draw(t.Shape);
 			}
 		};
@@ -51,6 +66,7 @@ class Field{
 					rect.setPosition({size_of_cell * i , size_of_cell * j});
 					rect.setSize({size_of_cell, size_of_cell});
 					rect.setOutlineThickness(2.0f);
+
 					Cells[i][j] = rect;
 				}
 			}
@@ -58,7 +74,7 @@ class Field{
 
 		void Draw_field(sf::RenderWindow& window){
 			for (int i = 0; i < count_of_cell; i++ ){
-				for (int j = 0; j < count_of_cell; j++ ){
+				for (int j = 0; j < count_of_cell; j++ ){					
 					window.draw(Cells[i][j]);
 				}
 			}
@@ -71,6 +87,21 @@ class Field{
 
 };
 
+
+
+void LeftRealeased(sf::Event event){
+	
+};
+
+void LeftPress(sf::Event event, sf::RenderWindow& window, int class_element, tags t){
+	sf::Vector2i Mouse_possition = sf::Mouse::getPosition(window);
+	int x_cell = window.getSize().x / Mouse_possition.x;
+	int y_cell = window.getSize().y / Mouse_possition.y;
+	t.add_tag({x_cell, y_cell}, class_element);
+	
+
+}
+
 int main (){
 
     sf::RenderWindow window(sf::VideoMode(500, 500), "TagGame", sf::Style::Titlebar | sf::Style::Close);
@@ -78,21 +109,38 @@ int main (){
 	sf::View view(sf::FloatRect(0, 0, 500, 500));
     window.setView(view);
     window.setVerticalSyncEnabled(true); 
-
+	int class_number = 0 ;
+	tags t;
 	while (window.isOpen())
     {
 		sf::Event event;
+	
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed || event.key.code == sf::Keyboard::Escape){
 				window.close();
 			}
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+				// std::cout<<"LEFT\n";
+				LeftPress(event, window, class_number, t);
+			}
+
+			if (event.type == sf::Event::MouseButtonReleased) {
+				
+				class_number++;
+				// std::cout<<class_number<<"\n";
+
+			}			
 		}
+		
+
 
 		window.clear(sf::Color::White);
 		window.setView(view);
 		Field field(5, 500);
 		field.Draw_field(window);
+		std::cout<<t.get_sizeTags()<<"\n";
+		t.Draw_Tags(window);
 		window.display();
          
     }
