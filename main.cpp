@@ -2,10 +2,10 @@
 #include <stack>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 // Функция, возвращающая цвет для номера класса (более 15 вариантов)
 sf::Color getColorForClass(int class_value) {
-    // Задаём набор из 15+ цветов:
     static const std::vector<sf::Color> colors = {
         sf::Color(255, 0, 0),       // Red
         sf::Color(0, 0, 255),       // Blue
@@ -22,7 +22,7 @@ sf::Color getColorForClass(int class_value) {
         sf::Color(165, 42, 42),     // Brown
         sf::Color(128, 128, 0),     // Olive
         sf::Color(0, 0, 128),       // Navy
-        sf::Color(199, 21, 133)     // MediumVioletRed – ещё один вариант
+        sf::Color(199, 21, 133)     // MediumVioletRed
     };
     int idx = (class_value - 1) % colors.size();
     return colors[idx];
@@ -41,12 +41,12 @@ public:
         return Tags.size();
     }
 
-    // Добавляем тег с заливкой цвета в зависимости от класса
+    // Добавление тэга с нужным цветом
     void add_tag(std::pair<float, float> pos, int class_of_tag, float size_of_cell){
         sf::RectangleShape rect;
         rect.setFillColor(getColorForClass(class_of_tag));
         rect.setPosition({pos.first, pos.second});
-        // Немного уменьшаем размер, чтобы сохранить отступы
+        // Немного уменьшаем размер для отступов
         rect.setSize({ size_of_cell - 2, size_of_cell - 2 });
         Tag t;
         t.Shape = rect;
@@ -57,7 +57,7 @@ public:
 
     tags(){};
 
-    // Отрисовка отдельных тегов (например, для отладки)
+    // Отрисовка отдельных тегов (для отладки)
     void Draw_Tags(sf::RenderWindow& window){
         for (auto t : Tags){
             sf::Text text;
@@ -77,7 +77,7 @@ public:
 class Field {
 public:    
     std::vector<std::vector<sf::RectangleShape>> Cells;
-    // Матрица, где 0 – пустая ячейка, иначе – номер класса
+    // Матрица: 0 – пустая, иначе номер класса объекта
     std::vector<std::vector<int>> Class_cells; 
 
     Field(float Count_Cell, float Size_Window){
@@ -90,7 +90,6 @@ public:
             Cells[i].resize(Count_Cell);
             Class_cells[i].resize(Count_Cell, 0);
         }
-
         for (int i = 0; i < Count_Cell; i++ ){
             for (int j = 0; j < Count_Cell; j++ ){
                 sf::RectangleShape rect;
@@ -104,7 +103,7 @@ public:
         }
     }
 
-    // По координатам мыши возвращает индексы ячейки
+    // По координатам мыши (относительно окна) возвращает индексы ячейки
     std::pair<int, int> get_cell_index(float MousePosX, float MousePosY){
         if (MousePosX < 0 || MousePosY < 0 || MousePosX > size_of_window || MousePosY > size_of_window){
             return {-1, -1};
@@ -114,7 +113,7 @@ public:
         return {i, j};
     }
 
-    // Возвращает границы ячейки: {x_min, y_min, x_max, y_max}
+    // Границы ячейки: {x_min, y_min, x_max, y_max}
     std::vector<float> get_cell(float MousePosX, float MousePosY){
         if (MousePosX < 1 || MousePosY < 1 || MousePosX > size_of_window || MousePosY > size_of_window){
             return {0, 0, 0, 0};
@@ -139,9 +138,7 @@ public:
         }
     }
 
-    // Отрисовка объединённых объектов.
-    // Для каждой группы (связанных ячеек с одинаковым классом) отрисовываем сначала заливку (каждая ячейка заливается отдельно без обводки),
-    // а затем для каждой ячейки, для сторон, не смежных с ячейкой того же класса – отрисовываем линию.
+    // Отрисовка объединённых объектов (как в предыдущем примере)
     void Draw_Merged_Tags(sf::RenderWindow& window) {
         int rows = Class_cells.size();
         if (rows == 0) return;
@@ -171,7 +168,7 @@ public:
                             }
                         }
                     }
-                    // Сначала заливаем каждую ячейку группы (без обводки), чтобы скрыть внутренние линии
+                    // Заливаем каждую ячейку группы (без обводки)
                     sf::Color fillColor = getColorForClass(currentClass);
                     for (auto cell : group) {
                         int ci = cell.first, cj = cell.second;
@@ -182,7 +179,7 @@ public:
                         rect.setOutlineThickness(0);
                         window.draw(rect);
                     }
-                    // Затем для каждой ячейки группы проверяем все 4 стороны
+                    // Отрисовываем внешнюю обводку для ячеек группы
                     for (auto cell : group) {
                         int ci = cell.first, cj = cell.second;
                         float x = ci * size_of_cell;
@@ -227,15 +224,54 @@ private:
     float size_of_window;
 };
 
-// Если ячейка пустая, по клику добавляем тег и запоминаем класс в матрице.
-void LeftPress(sf::Event event, sf::RenderWindow& window, int class_element, tags& t, Field& field){
-    sf::Vector2i Mouse_possition = sf::Mouse::getPosition(window);
-    auto cell_index = field.get_cell_index(Mouse_possition.x, Mouse_possition.y);
-    if(cell_index.first == -1 || cell_index.second == -1)
-        return; // клик вне поля
+//--------------------------------------------------------
+// Структура для хранения состояния перетаскивания
+struct DragState {
+    bool dragging = false;
+    int selectedClass = 0;
+    // Группа ячеек, принадлежащих перемещаемому объекту
+    std::vector<std::pair<int,int>> group;
+    // Опорная ячейка, с которой начат драггинг
+    std::pair<int,int> startMouseIndex;
+};
 
+DragState dragState;
+
+// По координатам (индексу) и полю возвращает группу (DFS) для объекта
+std::vector<std::pair<int,int>> getGroup(int i, int j, Field &field) {
+    std::vector<std::pair<int,int>> group;
+    int currentClass = field.Class_cells[i][j];
+    int rows = field.Class_cells.size();
+    int cols = field.Class_cells[0].size();
+    std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+    std::stack<std::pair<int,int>> st;
+    st.push({i,j});
+    visited[i][j] = true;
+    while(!st.empty()){
+        auto [ci, cj] = st.top();
+        st.pop();
+        group.push_back({ci,cj});
+        const std::vector<std::pair<int,int>> directions = { {1,0}, {-1,0}, {0,1}, {0,-1} };
+        for(auto d: directions){
+            int ni = ci + d.first, nj = cj + d.second;
+            if(ni >= 0 && ni < rows && nj >= 0 && nj < cols &&
+               !visited[ni][nj] && field.Class_cells[ni][nj] == currentClass) {
+                visited[ni][nj] = true;
+                st.push({ni,nj});
+            }
+        }
+    }
+    return group;
+}
+
+// Левый клик – добавление объектов (как раньше)
+void LeftPress(sf::Event event, sf::RenderWindow& window, int class_element, tags& t, Field& field){
+    sf::Vector2i Mouse_pos = sf::Mouse::getPosition(window);
+    auto cell_index = field.get_cell_index(Mouse_pos.x, Mouse_pos.y);
+    if(cell_index.first == -1 || cell_index.second == -1)
+        return;
     if(field.Class_cells[cell_index.first][cell_index.second] == 0){
-        std::vector<float> a = field.get_cell(Mouse_possition.x, Mouse_possition.y);
+        std::vector<float> a = field.get_cell(Mouse_pos.x, Mouse_pos.y);
         if(!a.empty()){
             t.add_tag({a[0], a[1]}, class_element, field.get_size_cell());
             field.Class_cells[cell_index.first][cell_index.second] = class_element;
@@ -243,14 +279,97 @@ void LeftPress(sf::Event event, sf::RenderWindow& window, int class_element, tag
     }
 }
 
+// Функция начала перетаскивания (правый клик)
+void startDragging(sf::Event event, Field &field, sf::RenderWindow &window) {
+    sf::Vector2i Mouse_pos = sf::Mouse::getPosition(window);
+    auto cell_index = field.get_cell_index(Mouse_pos.x, Mouse_pos.y);
+    if(cell_index.first == -1 || cell_index.second == -1)
+        return;
+    int cellClass = field.Class_cells[cell_index.first][cell_index.second];
+    if(cellClass != 0) {
+        dragState.dragging = true;
+        dragState.selectedClass = cellClass;
+        dragState.group = getGroup(cell_index.first, cell_index.second, field);
+        dragState.startMouseIndex = cell_index;
+    }
+}
+
+// Обработка перетаскивания
+void processDragging(Field &field, sf::RenderWindow &window) {
+    if(!dragState.dragging)
+        return;
+    // Получаем позицию мыши относительно окна
+    sf::Vector2i currentPos = sf::Mouse::getPosition(window);
+    auto currentIndex = field.get_cell_index(currentPos.x, currentPos.y);
+    if(currentIndex.first == -1 || currentIndex.second == -1)
+        return;
+    // Вычисляем смещение по клеткам относительно опорной точки
+    int dx = currentIndex.first - dragState.startMouseIndex.first;
+    int dy = currentIndex.second - dragState.startMouseIndex.second;
+    // Ограничим перемещение по одной оси: выбираем ось с большим абсолютным смещением
+    if (std::abs(dx) > std::abs(dy)) {
+        dy = 0;
+    } else {
+        dx = 0;
+    }
+    if(dx == 0 && dy == 0)
+        return;
+    int rows = field.Class_cells.size();
+    int cols = field.Class_cells[0].size();
+    // Создаём временную копию поля и освобождаем клетки объекта
+    auto temp = field.Class_cells;
+    for(auto cell : dragState.group) {
+        temp[cell.first][cell.second] = 0;
+    }
+    // Проверяем, можно ли переместить группу на (dx, dy)
+    bool canMove = true;
+    for(auto cell : dragState.group) {
+        int ni = cell.first + dx;
+        int nj = cell.second + dy;
+        if(ni < 0 || ni >= rows || nj < 0 || nj >= cols) {
+            canMove = false;
+            break;
+        }
+        if(temp[ni][nj] != 0) {
+            canMove = false;
+            break;
+        }
+    }
+    if(canMove) {
+        // Очищаем старые позиции
+        for(auto cell : dragState.group) {
+            field.Class_cells[cell.first][cell.second] = 0;
+        }
+        // Обновляем координаты группы
+        for(auto &cell : dragState.group) {
+            cell.first += dx;
+            cell.second += dy;
+        }
+        // Записываем новые позиции объекта
+        for(auto cell : dragState.group) {
+            field.Class_cells[cell.first][cell.second] = dragState.selectedClass;
+        }
+        // Обновляем опорную точку
+        dragState.startMouseIndex.first += dx;
+        dragState.startMouseIndex.second += dy;
+    }
+}
+
+// Завершение перетаскивания
+void stopDragging() {
+    dragState.dragging = false;
+    dragState.group.clear();
+    dragState.selectedClass = 0;
+}
+
 int main (){
     sf::RenderWindow window(sf::VideoMode(500, 500), "TagGame", sf::Style::Titlebar | sf::Style::Close);
-    window.setFramerateLimit(120); 
+    window.setFramerateLimit(30);
     sf::View view(sf::FloatRect(0, 0, 500, 500));
     window.setView(view);
     int class_number = 1;
     tags t;
-    Field field(10, 500);
+    Field field(5, 500);
 
     while (window.isOpen())
     {
@@ -263,11 +382,23 @@ int main (){
             else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
                 window.close();
 
-            if (event.type == sf::Event::MouseButtonReleased) {
-                // При отпускании кнопки увеличиваем номер класса,
-                // если в данной ячейке уже есть тег с текущим номером
-                sf::Vector2i Mouse_possition = sf::Mouse::getPosition(window);
-                auto cell_index = field.get_cell_index(Mouse_possition.x, Mouse_possition.y);
+            // Начало перетаскивания правой кнопкой
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right) {
+                startDragging(event, field, window);
+            }
+            // Перемещение объекта
+            if (event.type == sf::Event::MouseMoved) {
+                processDragging(field, window);
+            }
+            // Завершение перетаскивания
+            if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Right) {
+                stopDragging();
+            }
+
+            // Левый клик для создания объектов
+            if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+                sf::Vector2i Mouse_pos = sf::Mouse::getPosition(window);
+                auto cell_index = field.get_cell_index(Mouse_pos.x, Mouse_pos.y);
                 if(cell_index.first != -1 && cell_index.second != -1 &&
                    field.Class_cells[cell_index.first][cell_index.second] == class_number)
                     class_number++;
@@ -280,7 +411,6 @@ int main (){
         }
 
         window.clear(sf::Color::White);
-        // Рисуем сначала базовую сетку (если нужно), затем объединённые объекты, чтобы скрыть внутренние линии
         field.Draw_field(window);
         field.Draw_Merged_Tags(window);
         window.display();
