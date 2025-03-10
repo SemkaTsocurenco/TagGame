@@ -7,7 +7,7 @@ public:
 
 
 
-    Field(float Count_Cell, float Size_Window);
+    Field(float Count_Cell, std::pair<float, float> Size_Window, int rebase = 0);
 
     // По координатам мыши (относительно окна) возвращает индексы ячейки
     std::pair<int, int> get_cell_index(float MousePosX, float MousePosY);
@@ -26,9 +26,10 @@ public:
     std::vector<std::pair<int,int>> getGroup(int i, int j);
 
 private: 
+    int field_rebase;
     int count_of_cell;
     float size_of_cell;
-    float size_of_window;
+    std::pair<float, float> size_of_window;
     sf::Color getColorForClass(int class_value);
 
 };

@@ -2,9 +2,10 @@
 
 
 
-Field::Field(float Count_Cell, float Size_Window){
+Field::Field(float Count_Cell, std::pair<float, float> Size_Window, int rebase){
+    field_rebase = rebase;
     count_of_cell = Count_Cell;
-    size_of_cell = Size_Window / Count_Cell;
+    size_of_cell = Size_Window.second / Count_Cell;
     size_of_window = Size_Window;
     Cells.resize(Count_Cell);
     Class_cells.resize(Count_Cell);
@@ -17,7 +18,7 @@ Field::Field(float Count_Cell, float Size_Window){
             sf::RectangleShape rect;
             rect.setFillColor(sf::Color::White);
             rect.setOutlineColor(sf::Color::Black);
-            rect.setPosition({size_of_cell * i, size_of_cell * j});
+            rect.setPosition({(size_of_cell * i) + field_rebase, size_of_cell * j});
             rect.setSize({size_of_cell, size_of_cell});
             rect.setOutlineThickness(2.0f);
             Cells[i][j] = rect;
@@ -27,17 +28,20 @@ Field::Field(float Count_Cell, float Size_Window){
 
 // По координатам мыши (относительно окна) возвращает индексы ячейки
 std::pair<int, int> Field::get_cell_index(float MousePosX, float MousePosY){
-    if (MousePosX < 0 || MousePosY < 0 || MousePosX > size_of_window || MousePosY > size_of_window){
+    if (MousePosX < 0 || MousePosY < 0 || MousePosX > size_of_window.first || MousePosY > size_of_window.second){
+        std::cout<<"range\n";
         return {-1, -1};
     }
     int i = static_cast<int>(MousePosX / size_of_cell);
     int j = static_cast<int>(MousePosY / size_of_cell);
+    std::cout<<"i: " << i << "  j: " << j<<"\n";
     return {i, j};
 }
 
 // Границы ячейки: {x_min, y_min, x_max, y_max}
 std::vector<float> Field::get_cell(float MousePosX, float MousePosY){
-    if (MousePosX < 1 || MousePosY < 1 || MousePosX > size_of_window || MousePosY > size_of_window){
+    if (MousePosX < 0 || MousePosY < 0 || MousePosX > size_of_window.first || MousePosY > size_of_window.second){
+        std::cout<<"range\n";
         return {0, 0, 0, 0};
     }
     float x_min = size_of_cell * static_cast<int>(MousePosX / size_of_cell);
