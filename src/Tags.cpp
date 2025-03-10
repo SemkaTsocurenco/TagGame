@@ -25,16 +25,7 @@ void tags::add_tag(std::pair<float, float> pos, int class_of_tag, float size_of_
 // Отрисовка отдельных тегов (для отладки)
 void tags::Draw_Tags(sf::RenderWindow& window){
     for (auto t : Tags){
-        sf::Text text;
-        text.setPosition({t.possition.first, t.possition.second});
-        text.setFillColor(sf::Color::Black);
-        text.setCharacterSize(20);
-        sf::Font f;
-        f.loadFromFile("../res/ShareTechMonoRegular.ttf");
-        text.setFont(f);
-        text.setString(std::to_string(t.class_tag));
         window.draw(t.Shape);
-        window.draw(text);
     }
 }
 
