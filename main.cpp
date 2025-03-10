@@ -7,9 +7,6 @@
 
 
 
-
-
-
 int main (){
     eventProcessor EP;
     DragProc DRAG;
