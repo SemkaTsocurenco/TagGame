@@ -99,7 +99,21 @@ void Field::Draw_Merged_Tags(sf::RenderWindow& window) {
                     rect.setSize({size_of_cell, size_of_cell});
                     rect.setFillColor(fillColor);
                     rect.setOutlineThickness(0);
+
+                    sf::Text text;
+                    text.setPosition({(ci * size_of_cell+ size_of_cell / 2) - 14, (cj * size_of_cell  + size_of_cell / 2) - 14});
+                    text.setFillColor(sf::Color::Black);
+                    text.setCharacterSize(25);
+                    sf::Font f;
+                    f.loadFromFile("../res/Kameron.ttf");
+                    text.setFont(f);
+                    text.setStyle(text.Bold);
+                    text.setOutlineThickness(3);
+                    text.setOutlineColor(sf::Color::White);
+                    text.setString(std::to_string(currentClass));
                     window.draw(rect);
+                    window.draw(text);
+
                 }
                 // Отрисовываем внешнюю обводку для ячеек группы
                 for (auto cell : group) {
