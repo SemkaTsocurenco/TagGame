@@ -23,6 +23,8 @@ public:
     // Отрисовка объединённых объектов (как в предыдущем примере)
     void Draw_Merged_Tags(sf::RenderWindow& window);
 
+    std::vector<std::pair<int,int>> getGroup(int i, int j);
+
 private: 
     int count_of_cell;
     float size_of_cell;

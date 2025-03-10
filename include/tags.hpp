@@ -9,6 +9,8 @@ private:
 
     sf::Color getColorForClass(int class_value);
 public:
+
+
     int get_sizeTags();
 
     // Добавление тэга с нужным цветом

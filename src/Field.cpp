@@ -167,3 +167,29 @@ sf::Color Field::getColorForClass(int class_value) {
 }
 
 
+// По координатам (индексу) и полю возвращает группу (DFS) для объекта
+std::vector<std::pair<int,int>> Field::getGroup(int i, int j) {
+    std::vector<std::pair<int,int>> group;
+    int currentClass = this->Class_cells[i][j];
+    int rows = this->Class_cells.size();
+    int cols = this->Class_cells[0].size();
+    std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+    std::stack<std::pair<int,int>> st;
+    st.push({i,j});
+    visited[i][j] = true;
+    while(!st.empty()){
+        auto [ci, cj] = st.top();
+        st.pop();
+        group.push_back({ci,cj});
+        const std::vector<std::pair<int,int>> directions = { {1,0}, {-1,0}, {0,1}, {0,-1} };
+        for(auto d: directions){
+            int ni = ci + d.first, nj = cj + d.second;
+            if(ni >= 0 && ni < rows && nj >= 0 && nj < cols &&
+               !visited[ni][nj] && this->Class_cells[ni][nj] == currentClass) {
+                visited[ni][nj] = true;
+                st.push({ni,nj});
+            }
+        }
+    }
+    return group;
+}
