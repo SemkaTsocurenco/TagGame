@@ -8,7 +8,7 @@ project(TagGame)
 set(CMAKE_CXX_STANDARD 17)
 
 # Указываем путь к папке с исходными файлами
-set(SOURCES main.cpp 
+set(SOURCES main.cpp src/Tags.cpp src/Field.cpp src/Drag.cpp
 )
 
 # Указываем пути к библиотекам SFML
