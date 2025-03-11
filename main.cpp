@@ -129,6 +129,22 @@ void initialize() {
         {8, 8, 8, 7, 7}
     };
 
+    // targetField = {
+    //     {1, 1, 1, 2, 2},
+    //     {4, 4, 0, 5, 2},
+    //     {3, 3, 0, 5, 5},
+    //     {6, 6, 10, 9, 0},
+    //     {8, 8, 8, 7, 7}
+    // };
+
+    // targetField = {
+    //     {4, 4, 5, 2, 2},
+    //     {3, 3, 5, 5, 2},
+    //     {1, 1, 1, 0, 0},
+    //     {6, 6, 10, 9, 0},
+    //     {8, 8, 8, 7, 7}
+    // };
+
     printField(initialField, "Начальное положение:");
     printField(targetField, "Целевое положение:");
 
@@ -353,21 +369,7 @@ std::vector<Node*> a_star_solution() {
     return path;
 }
 
-/**
- * @brief Получить строку с подробным разбором эвристики для данного состояния.
- */
-std::string getHeuristicBreakdown(const std::vector<std::vector<int>>& state) {
-    std::stringstream ss;
-    for (int tag : classes) {
-        auto current = getTopLeft(state, tag);
-        auto target = targetTopLeft[tag];
-        int dist = std::abs(current.first - target.first) + std::abs(current.second - target.second);
-        ss << "  Object " << tag << ": Now (" << current.first << ", " << current.second 
-           << "), target (" << target.first << ", " << target.second << ") => " 
-           << dist << "\n";
-    }
-    return ss.str();
-}
+
 
 /**
  * @brief Функция визуализации решения с использованием SFML.
@@ -378,7 +380,7 @@ std::string getHeuristicBreakdown(const std::vector<std::vector<int>>& state) {
  */
 void visualizeSolution(const std::vector<Node*>& path) {
     // Создаём окно
-    sf::RenderWindow window(sf::VideoMode(BOARD_MARGIN * 2 + CELL_SIZE * BOARD_SIZE + 300, BOARD_MARGIN * 2 + CELL_SIZE * BOARD_SIZE), "A* Visualization");
+    sf::RenderWindow window(sf::VideoMode(BOARD_MARGIN * 2 + CELL_SIZE * BOARD_SIZE , BOARD_MARGIN * 2 + CELL_SIZE * BOARD_SIZE), "A* Visualization");
     window.setFramerateLimit(60);
 
     // Загружаем шрифт (файл Nunito.ttf должен быть в рабочей директории)
@@ -392,7 +394,7 @@ void visualizeSolution(const std::vector<Node*>& path) {
     size_t currentStep = 0;
 
     // Пауза между шагами (в секундах)
-    const float pauseTime = 2.0f;
+    const float pauseTime = 0.5f;
     sf::Clock stepClock;
     stepClock.restart();
 
@@ -478,18 +480,17 @@ void visualizeSolution(const std::vector<Node*>& path) {
         infoText.setCharacterSize(16);
         infoText.setFillColor(sf::Color::Black);
         std::stringstream infoSS;
-        infoSS << "Step " << currentStep << " og " << path.size()-1 << "\n";
-        if (currentStep == 0)
-            infoSS << "Initial state\n";
-        else {
-            infoSS << "movement object: " << node->piece << "\n";
-        }
-        infoSS << "g = " << node->g << "\n";
-        infoSS << "h = " << node->h << "\n";
-        infoSS << "f = " << node->f << "\n\n";
-        infoSS << getHeuristicBreakdown(node->state);
+        infoSS << "Step " << currentStep << " of " << path.size()-1 ;
+        infoSS << "   |   cost = " << node->g ;
+        infoSS << "   |   heuristic = " << node->h ;
+        infoSS << "   |   total cost = " << node->f ;
         infoText.setString(infoSS.str());
-        infoText.setPosition(BOARD_MARGIN + CELL_SIZE * BOARD_SIZE + 20, BOARD_MARGIN);
+        infoText.setPosition(BOARD_MARGIN , BOARD_MARGIN/2 - 5);
+        window.draw(infoText);
+        std::stringstream infoSS1;
+        infoSS1 << "Press  \"SPASE\" to sikp to the next step";
+        infoText.setString(infoSS1.str());
+        infoText.setPosition(BOARD_MARGIN , BOARD_MARGIN + 5 + CELL_SIZE * BOARD_SIZE);
         window.draw(infoText);
 
         window.display();
