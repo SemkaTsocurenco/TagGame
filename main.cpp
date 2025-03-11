@@ -10,9 +10,27 @@
 #include <sstream>
 #include <cmath>
 #include <algorithm>
+#include <iomanip>
+
+// Функция для получения цвета фишки по её номеру
+sf::Color getPieceColor(int piece) {
+    switch(piece) {
+        case 1: return sf::Color(255, 102, 102);   // светло-красный
+        case 2: return sf::Color(102, 255, 102);   // светло-зелёный
+        case 3: return sf::Color(102, 102, 255);   // светло-синий
+        case 4: return sf::Color(255, 255, 102);   // светло-жёлтый
+        case 5: return sf::Color(255, 102, 255);   // розовый
+        case 6: return sf::Color(102, 255, 255);   // голубой
+        case 7: return sf::Color(255, 178, 102);   // оранжевый
+        case 8: return sf::Color(178, 102, 255);   // фиолетовый
+        case 9: return sf::Color(102, 178, 255);   // небесно-голубой
+        case 10: return sf::Color(160, 160, 160);  // серый
+        default: return sf::Color::White;
+    }
+}
 
 // Размеры доски и визуализации
-const int BOARD_SIZE = 5;         // размер игрового поля 3x3
+const int BOARD_SIZE = 5;         // размер игрового поля 5x5
 const int CELL_SIZE = 100;        // размер клетки в пикселях
 const int BOARD_MARGIN = 50;      // отступ поля от края окна
 
@@ -77,7 +95,7 @@ int heuristic(const std::vector<std::vector<int>>& state) {
  */
 void printField(const std::vector<std::vector<int>>& state, const std::string& title) {
     std::cout << "\n" << title << "\n";
-    std::cout << "+-----+-----+-----+\n";
+    std::cout << "+-----+-----+-----+-----+-----+\n";
     for (const auto& row : state) {
         std::cout << "|  ";
         for (auto cell : row) {
@@ -87,7 +105,7 @@ void printField(const std::vector<std::vector<int>>& state, const std::string& t
                 std::cout << "   |  ";
             }
         }
-        std::cout << "\n+-----+-----+-----+\n";
+        std::cout << "\n+-----+-----+-----+-----+-----+\n";
     }
 }
 
@@ -95,20 +113,6 @@ void printField(const std::vector<std::vector<int>>& state, const std::string& t
  * @brief Инициализация начального и целевого состояний, а также вычисление целевых позиций объектов.
  */
 void initialize() {
-    // Пример 3x3 поля. Можно раскомментировать другой вариант.
-    // initialField = {
-    //     {0, 0, 1},
-    //     {2, 0, 0},
-    //     {2, 2, 0}
-    // };
-
-    // targetField = {
-    //     {0, 2, 0},
-    //     {0, 2, 2},
-    //     {0, 0, 1}
-    // };
-
-
     initialField = {
         {1, 1, 1, 2, 2},
         {3, 3, 4, 4, 2},
@@ -124,14 +128,6 @@ void initialize() {
         {5, 5, 0, 2, 0},
         {8, 8, 8, 7, 7}
     };
-
-    // targetField = {
-    //     {6, 6, 5, 2, 2},
-    //     {7, 7, 5, 5, 2},
-    //     {1, 1, 1, 3, 3},
-    //     {4, 4, 8, 8, 8},
-    //     {9, 0, 0, 0, 10}
-    // };
 
     printField(initialField, "Начальное положение:");
     printField(targetField, "Целевое положение:");
@@ -170,7 +166,7 @@ void initialize() {
         auto coord = targetTopLeft[tag];
         std::cout << "Объект " << tag << ": { " << coord.first << ", " << coord.second << " };\n";
     }
-    std::cout << "\n~~~~~~~~ Поиск решения A*... ~~~~~~~~\n\n";
+    std::cout << "\n~~~~~~~~~~~~~~~~ Поиск решения A*... ~~~~~~~~~~~~~~~~\n\n";
 }
 
 /**
@@ -235,7 +231,7 @@ struct Node {
     int h; // эвристическая оценка от этого состояния до цели
     int f; // сумма g + h
     int piece;            // объект, перемещение которого привело к этому состоянию
-    std::string direction; // направление движения (например, "↑", "↓", "←", "→")
+    std::string direction; // направление движения (например, "up", "down", "left", "right")
     Node* parent;         // указатель на родительский узел
 
     Node(const std::vector<std::vector<int>>& state, int g, int h, int piece = 0,
@@ -257,12 +253,12 @@ struct CompareNode {
  */
 std::vector<Node*> getNeighbors(Node* current) {
     std::vector<Node*> neighbors;
-    // Возможные направления: (dr, dc) и символ направления
+    // Возможные направления: (dr, dc) и название направления
     std::vector<std::pair<std::pair<int, int>, std::string>> directions = {
-        {{-1, 0}, "up"},
-        {{1, 0}, "down"},
-        {{0, -1}, "left"},
-        {{0, 1}, "right"}
+        {{-1, 0}, "↑"},
+        {{1, 0}, "↓"},
+        {{0, -1}, "←"},
+        {{0, 1}, "→"}
     };
     // Для каждого объекта из глобального набора
     for (int piece : classes) {
@@ -276,6 +272,7 @@ std::vector<Node*> getNeighbors(Node* current) {
             }
         }
     }
+    
     return neighbors;
 }
 
@@ -328,13 +325,31 @@ std::vector<Node*> a_star_solution() {
 
     // Выводим последовательность ходов в консоль (пропуская начальное состояние)
     int moveNumber = 1;
+ // Заголовок таблицы (ширины можно скорректировать по необходимости)
+    std::cout << "+-----------------------------------------------------------+\n";
+    std::cout << "| " << std::setw(6) << std::left << "Step"
+              << " | " << std::setw(15) << std::left << "Move"
+              << " | " << std::setw(8) << std::right << "g"
+              << " | " << std::setw(8) << std::right << "h"
+              << " | " << std::setw(8) << std::right << "f"
+              << " |\n";
+    std::cout << "+--------+-----------------+----------+----------+----------+\n";
+
     for (size_t i = 1; i < path.size(); i++) {
-        std::cout << "Ход " << moveNumber << ": перемещение объекта " 
-                  << path[i]->piece << " - " << path[i]->direction 
-                  << " (g=" << path[i]->g << ", h=" << path[i]->h 
-                  << ", f=" << path[i]->f << ")\n";
+        // Формирование строки "piece - direction"
+        std::string move = std::to_string(path[i]->piece) + " - " + path[i]->direction;
+        std::cout << "| " << std::setw(6) << std::left << moveNumber
+                  << " | " << std::setw(17) << std::left << move
+                  << " | " << std::setw(8) << std::right << path[i]->g
+                  << " | " << std::setw(8) << std::right << path[i]->h
+                  << " | " << std::setw(8) << std::right << path[i]->f
+                  << " |\n";
+        std::cout << "+--------+-----------------+----------+----------+----------+\n";
         moveNumber++;
     }
+
+    std::cout << "\n~~~~~~~~~~~~~~~~ Решение Завершено ~~~~~~~~~~~~~~~~\n\n";
+
     return path;
 }
 
@@ -343,12 +358,11 @@ std::vector<Node*> a_star_solution() {
  */
 std::string getHeuristicBreakdown(const std::vector<std::vector<int>>& state) {
     std::stringstream ss;
-    ss << "Heuristic (summ of Manhattan distances):\n";
     for (int tag : classes) {
         auto current = getTopLeft(state, tag);
         auto target = targetTopLeft[tag];
         int dist = std::abs(current.first - target.first) + std::abs(current.second - target.second);
-        ss << "  Object " << tag << ": now state (" << current.first << ", " << current.second 
+        ss << "  Object " << tag << ": Now (" << current.first << ", " << current.second 
            << "), target (" << target.first << ", " << target.second << ") => " 
            << dist << "\n";
     }
@@ -360,16 +374,17 @@ std::string getHeuristicBreakdown(const std::vector<std::vector<int>>& state) {
  *
  * Для каждого узла (состояния) из найденного пути поочерёдно отрисовывается игровое поле с
  * дополнительной информацией: номер хода, направление движения, значения g, h, f и подробный разбор эвристики.
+ * Визуализация изменена: вместо простых числовых значений фишки отрисовываются как цветные круги с эффектом объёма.
  */
 void visualizeSolution(const std::vector<Node*>& path) {
     // Создаём окно
     sf::RenderWindow window(sf::VideoMode(BOARD_MARGIN * 2 + CELL_SIZE * BOARD_SIZE + 300, BOARD_MARGIN * 2 + CELL_SIZE * BOARD_SIZE), "A* Visualization");
     window.setFramerateLimit(60);
 
-    // Загружаем шрифт (файл arial.ttf должен быть в рабочей директории)
+    // Загружаем шрифт (файл Nunito.ttf должен быть в рабочей директории)
     sf::Font font;
     if (!font.loadFromFile("../Nunito.ttf")) {
-        std::cerr << "Не удалось загрузить шрифт arial.ttf\n";
+        std::cerr << "Не удалось загрузить шрифт Nunito.ttf\n";
         return;
     }
 
@@ -417,20 +432,42 @@ void visualizeSolution(const std::vector<Node*>& path) {
                 cell.setOutlineColor(sf::Color::Black);
                 window.draw(cell);
 
-                // Если в клетке есть число, отрисовываем его
+                // Если в клетке есть фишка (число не равно 0), отрисовываем её как круг с эффектом объёма
                 if (node->state[i][j] != 0) {
-                    sf::Text text;
-                    text.setFont(font);
-                    text.setString(std::to_string(node->state[i][j]));
-                    text.setCharacterSize(24);
-                    text.setFillColor(sf::Color::Black);
-                    // Центрирование текста
-                    sf::FloatRect textRect = text.getLocalBounds();
-                    text.setOrigin(textRect.left + textRect.width / 2.0f,
-                                   textRect.top  + textRect.height / 2.0f);
-                    text.setPosition(BOARD_MARGIN + j * CELL_SIZE + CELL_SIZE / 2,
-                                     BOARD_MARGIN + i * CELL_SIZE + CELL_SIZE / 2);
-                    window.draw(text);
+                    int piece = node->state[i][j];
+                    sf::Color pieceColor = getPieceColor(piece);
+                    // Вычисление центра клетки
+                    float centerX = BOARD_MARGIN + j * CELL_SIZE + CELL_SIZE / 2;
+                    float centerY = BOARD_MARGIN + i * CELL_SIZE + CELL_SIZE / 2;
+                    // Создание отбрасываемой тени (смещение на 4 пикселя вправо и вниз)
+                    sf::CircleShape shadowCircle(35);
+                    shadowCircle.setFillColor(sf::Color(
+                        static_cast<sf::Uint8>(pieceColor.r * 0.7),
+                        static_cast<sf::Uint8>(pieceColor.g * 0.7),
+                        static_cast<sf::Uint8>(pieceColor.b * 0.7)
+                    ));
+                    shadowCircle.setPosition(centerX - 35 + 4, centerY - 35 + 4);
+                    window.draw(shadowCircle);
+                    // Основной круг фишки
+                    sf::CircleShape chipCircle(35);
+                    chipCircle.setFillColor(pieceColor);
+                    chipCircle.setOutlineThickness(3);
+                    chipCircle.setOutlineColor(sf::Color::Black);
+                    chipCircle.setPosition(centerX - 35, centerY - 35);
+                    window.draw(chipCircle);
+                    // Отрисовка номера фишки по центру
+                    sf::Text pieceText;
+                    pieceText.setFont(font);
+                    pieceText.setString(std::to_string(piece));
+                    pieceText.setCharacterSize(24);
+                    pieceText.setFillColor(sf::Color::Black);
+                    pieceText.setOutlineThickness(5);
+                    pieceText.setOutlineColor(sf::Color::White);
+                    sf::FloatRect textRect = pieceText.getLocalBounds();
+                    pieceText.setOrigin(textRect.left + textRect.width / 2.0f,
+                                        textRect.top  + textRect.height / 2.0f);
+                    pieceText.setPosition(centerX, centerY);
+                    window.draw(pieceText);
                 }
             }
         }
@@ -441,12 +478,11 @@ void visualizeSolution(const std::vector<Node*>& path) {
         infoText.setCharacterSize(16);
         infoText.setFillColor(sf::Color::Black);
         std::stringstream infoSS;
-        infoSS << "Step " << currentStep << " of " << path.size()-1 << "\n";
+        infoSS << "Step " << currentStep << " og " << path.size()-1 << "\n";
         if (currentStep == 0)
-            infoSS << "Initail state\n";
+            infoSS << "Initial state\n";
         else {
-            infoSS << "Move Obj: " << node->piece 
-                   << " (" << node->direction << ")\n";
+            infoSS << "movement object: " << node->piece << "\n";
         }
         infoSS << "g = " << node->g << "\n";
         infoSS << "h = " << node->h << "\n";
@@ -474,7 +510,7 @@ int main() {
     }
 
     // Визуализируем найденное решение
-    std::cout << "\nНажимайте пробел или ждите " << "2 сек. для перехода к следующему шагу визуализации.\n";
+    std::cout << "\nНажимайте пробел или ждите 2 сек. для перехода к следующему шагу визуализации.\n";
     visualizeSolution(solutionPath);
 
     return 0;
