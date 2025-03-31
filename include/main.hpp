@@ -32,6 +32,7 @@ extern std::vector<std::vector<int>> targetField;
 
 // Уникальные объекты (метки)
 extern std::set<int> classes;
+extern std::set<int> classes_target;
 
 // Для каждого объекта сохраняем координаты верхнего левого угла целевого положения
 extern std::unordered_map<int, std::pair<int, int>> targetTopLeft;

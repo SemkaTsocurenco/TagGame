@@ -23,6 +23,7 @@ void visualizeSolution(const std::vector<Node*>& path) {
     const float pauseTime = 0.5f;
     sf::Clock stepClock;
     stepClock.restart();
+    bool pause = false;
 
     while (window.isOpen()) {
         // Обработка событий окна (закрытие, нажатие клавиш)
@@ -31,21 +32,32 @@ void visualizeSolution(const std::vector<Node*>& path) {
             if (event.type == sf::Event::Closed)
                 window.close();
             // При нажатии пробела переходим к следующему шагу
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Right) {
                 if (currentStep < path.size() - 1) {
                     currentStep++;
                     stepClock.restart();
                 }
             }
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Left) {
+                if (currentStep > 0) {
+                    currentStep--;
+                    stepClock.restart();
+                }
+            }
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
+                pause = (pause == true) ? (false) : (true);
+            }
         }
 
         // Если прошло заданное время, автоматический переход к следующему шагу
         if (stepClock.getElapsedTime().asSeconds() >= pauseTime) {
-            if (currentStep < path.size() - 1) {
+            if ((currentStep < path.size() - 1) && (!pause)) {
                 currentStep++;
                 stepClock.restart();
             }
         }
+
+        
 
         window.clear(sf::Color::White);
 
