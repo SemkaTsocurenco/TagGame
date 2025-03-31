@@ -2,7 +2,7 @@
 
 int heuristic(const std::vector<std::vector<int>>& state) {
     int total = 0;
-    for (auto tag : classes) {
+    for (auto tag : classes_target) {
         auto current = getTopLeft(state, tag);
         auto target = targetTopLeft[tag];
         total += std::abs(current.first - target.first) + std::abs(current.second - target.second);
@@ -37,6 +37,15 @@ std::vector<Node*> getNeighbors(Node* current) {
     return neighbors;
 }
 
+bool goalReached(const std::vector<std::vector<int>>& state) {
+    for (int piece : classes_target) {
+        auto currentPos = getTopLeft(state, piece);
+        if (currentPos != targetTopLeft[piece]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 std::vector<Node*> a_star_solution() {
     Node* start = new Node(initialField, 0, heuristic(initialField));
@@ -49,10 +58,11 @@ std::vector<Node*> a_star_solution() {
         Node* current = openSet.top();
         openSet.pop();
 
-        if (current->state == targetField) {
+        if (goalReached(current->state)) {
             solution = current;
             break;
         }
+
 
         std::string stateKey = stateToString(current->state);
         if (closedSet.find(stateKey) != closedSet.end())
